@@ -1,0 +1,83 @@
+doctype html
+html(lang='en')
+  head
+    title Simple Chat Room
+    script(src="https://ajax.googleapis.com/ajax/libs/jquery/3.0.0/jquery.min.js")
+    script(type="text/javascript").
+      $(function () {
+        var sock = null;
+        var msg = $("#msg");
+        var chatlog = $("#chatbox");
+        function addToChat(addMe) {
+          var pos = chatlog[0];
+          var scroll = pos.scrollTop === pos.scrollHeight - pos.clientHeight;
+          addMe.appendTo(chatlog);
+          if (scroll) {
+            pos.scrollTop = pos.scrollHeight - pos.clientHeight;
+          }
+        }
+        $("#form").submit(function () {
+          if (!sock) {
+            return false;
+          }
+          if (!msg.val()) {
+            return false;
+          }
+          sock.send(msg.val());
+          msg.val("");
+          return false;
+        });
+        if (window["WebSocket"]) {
+          console.log("WebSocket Support Detected");
+          sock = new WebSocket("ws://{{$}}/ws");
+          console.log("Socket Created!");
+          sock.onopen = function() {
+            console.log("Connection established!");
+          }
+          sock.onClose = function (e) {
+            console.log("Disconnected!");
+          }
+          sock.onmessage = function (e) {
+            var messages = e.data.split('\n')
+            for (var i = 0; i < messages.length; i++) {
+              var time = new Date();
+              var hours = (time.getHours() < 10?'0':'') + time.getHours();
+              var minutes = (time.getMinutes() < 10?'0':'') + time.getMinutes();
+              var seconds = (time.getSeconds() < 10?'0':'') + time.getSeconds();
+              var prompt = hours + ":" + minutes + ":" + seconds + ">> ";
+              addToChat($("<div/>").text(prompt + messages[i]));
+            }
+          }
+        } else {
+          console.log("This browser does not support WebSocket.");
+        }
+      });
+    h1(align=CENTER) ~Anonymous Chatroom~
+    style(type="text/css").
+      html {
+        overflow:hidden;
+      }
+      body {
+        overflow: hidden;
+        padding: 0;
+        margin: 0;
+        width: 100%%;
+        height: 100%%;
+        background: lightblue;
+      }
+      #chatbox {
+        text-align: left;
+        background: white;
+        margin: 0 auto;
+        margin-bottom: 25px;
+        padding: 10px;
+        height: 500px;
+        width: 830px;
+        border: 1px solid #ACD8F0;
+        overflow: auto;
+      }
+  body
+    #chatbox
+    form#form(align=CENTER)
+      input(type="submit", value="Send")
+      input#msg(type="text", size="100")
